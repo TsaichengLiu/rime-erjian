@@ -1,0 +1,23 @@
+{
+  "name": "二简字·1981 年修订草案",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "text",
+      "file": "erjian_xiu.txt"
+    }
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {
+            "type": "text",
+            "file": "erjian_xiu.txt"
+          }
+        ]
+      }
+    }
+  ]
+}

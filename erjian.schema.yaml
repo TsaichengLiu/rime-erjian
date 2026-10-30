@@ -1,0 +1,104 @@
+# Rime schema
+# encoding: utf-8
+#
+# 二简字·拼音
+# 《第二次汉字简化方案（草案）》(中国文字改革委员会，1977-12-20) 输入方案
+#
+# 设计要点：
+#   以朙月拼音为底，不另建二简字词库。输入的是现行简化字的拼音，
+#   由 OpenCC 过滤器在「候选汉字」层面把一简转为二简。
+#   好处是二简字与原字读音不一致的情形（嘴→咀、停→仃、遇→迂…）
+#   不会污染正常输入：打 jujue 仍出「咀嚼」，打 zui 才出「咀」。
+#
+# 过滤链： 朙月拼音(繁) → simplifier(t2s) → simplifier@erjian_* → uniquifier
+
+__include: luna_pinyin.schema:/
+
+schema:
+  schema_id: erjian
+  name: 二简字·拼音
+  version: "1.0"
+  author:
+    - 字表据《第二次汉字简化方案（草案）》，中国文字改革委员会，1977-12-20
+  description: |
+    《第二次汉字简化方案（草案）》二简字输入方案。
+
+    四档输出，Ctrl+` 选单切换，或 Ctrl+Shift+6 循环：
+      一简          现行简化字，不转换
+      二简·一表     第一表（试行表），1978 年曾在出版物上试用。
+                    与草案录文逐条比对，无缺漏。
+      二简·一二表   第一表＋第二表。第二表原拟 605 个字形，本表仅得 206 个，
+                    其余至今未进 Unicode，无从输入，故括注「未编码字从阙」。
+                    缺口集中在「简化偏旁」的类推字：简化后的偏旁本身
+                    （隹、耳、皿、雨 等）就没有码位，整组无解。
+      二简·修订     1981 年修订草案。注意此档不含一、二表：修订草案是对
+                    1977 草案的删减重拟，1977 一二表 577 条只留 109 条，
+                    另改动 10 个字形、新增 8 条，故自成一套。
+                    据 1981 年《征求意见表》原件，正表 111 条（91＋20），
+                    共 119 个原字；本表收得 95 个，另有类推字 14 个。
+                    缺的 24 个多是 1981 年另拟的新字形，码位未定。
+
+    候选右侧注释为转换前的现行简化字。
+    二简字多在 CJK 扩展 B/G 区，须装覆盖该区的字体（如 Plangothic）方能显示。
+    本方案已于 1986-06-24 由国务院明令废止，仅供研究与存档之用。
+  dependencies:
+    - stroke
+
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ 中文, 西文 ]
+  - name: full_shape
+    states: [ 半角, 全角 ]
+  - name: simplification
+    reset: 1
+    states: [ 繁體, 简体 ]
+  # 「全表」是不实的标签：第二表原拟 605 个字形，本表仅得 206 个，
+  # 其余至今未进 Unicode，根本无从输入。故改称「一二表」以示范围，括注说明缺口。
+  #
+  # 前三档是累加的（一表 ⊂ 一二表），第四档不是：1981 修订草案是对 1977 草案的
+  # 删减重拟，577 条只留 109 条，另改动 10 个字形（巅/癫 由 𱂪 改回 颠，
+  # 镰 由 连 改作 𰾮，潦 由 了 改作 𣱾 …），并新增 8 条。故独立成档，
+  # 括注「另拟」以免被读成「一二表＋修订」。
+  - options: [ erjian.off, erjian.b1, erjian.b12, erjian.xiu ]
+    states: [ 一简, 二简·一表, "二简·一二表（二表 Unicode 未编码字从阙）", "二简·修订（1981 另拟）" ]
+    reset: 1
+  - name: ascii_punct
+    states: [ 。，, ．， ]
+
+engine:
+  filters:
+    - simplifier              # 繁體 → 现行简化字（simplification 开关）
+    - simplifier@erjian_b1    # 现行简化字 → 二简·第一表
+    - simplifier@erjian_b12   # 现行简化字 → 二简·第一表＋第二表
+    - simplifier@erjian_xiu   # 现行简化字 → 二简·1981 修订草案
+    - uniquifier              # 二简多对一合并后去重（丁叮盯钉 → 丁）
+
+# 复用朙月拼音已编译的棱镜，拼写规则与之完全一致
+translator:
+  prism: luna_pinyin
+
+erjian_b1:
+  option_name: erjian.b1
+  opencc_config: erjian_b1.json
+  tips: all
+
+erjian_b12:
+  option_name: erjian.b12
+  opencc_config: erjian_b12.json
+  tips: all
+
+erjian_xiu:
+  option_name: erjian.xiu
+  opencc_config: erjian_xiu.json
+  tips: all
+
+# Ctrl+Shift+6 在四档之间循环：
+#   一简 → 二简·一表 → 二简·全表 → 二简·修订 → 一简
+# （librime 对单选开关组的 toggle 即为「循环到下一项」，并自动互斥，
+#   故一个键足矣。Ctrl+Shift+1~5 已被 default 预设占用，勿用。）
+key_binder:
+  import_preset: default
+  bindings/+:
+    - { when: always, accept: Control+Shift+6, toggle: erjian.off }
+    - { when: always, accept: Control+Shift+asciicircum, toggle: erjian.off }

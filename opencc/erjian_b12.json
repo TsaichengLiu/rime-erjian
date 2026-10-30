@@ -1,0 +1,23 @@
+{
+  "name": "二简字·第一表＋第二表",
+  "segmentation": {
+    "type": "mmseg",
+    "dict": {
+      "type": "text",
+      "file": "erjian_b12.txt"
+    }
+  },
+  "conversion_chain": [
+    {
+      "dict": {
+        "type": "group",
+        "dicts": [
+          {
+            "type": "text",
+            "file": "erjian_b12.txt"
+          }
+        ]
+      }
+    }
+  ]
+}
